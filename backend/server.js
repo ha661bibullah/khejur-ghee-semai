@@ -137,17 +137,34 @@ const auth = async (req, res, next) => {
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log('Login attempt for email:', email);
+
     const user = await User.findOne({ email });
-    if (!user || user.role !== 'admin') {
+    console.log('User found in DB:', user ? 'yes' : 'no');
+
+    if (!user) {
+      console.log('No user with that email');
       return res.status(401).json({ message: 'Invalid credentials' });
     }
+
+    if (user.role !== 'admin') {
+      console.log('User role is not admin:', user.role);
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
+    console.log('Password match result:', isMatch);
+
     if (!isMatch) {
+      console.log('Password does not match');
       return res.status(401).json({ message: 'Invalid credentials' });
     }
+
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    console.log('Login successful for:', email);
     res.json({ token, user: { id: user._id, name: user.name, email: user.email } });
   } catch (err) {
+    console.error('Login error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
