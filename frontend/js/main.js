@@ -4,6 +4,20 @@ let token = localStorage.getItem('token');
 let currentUser = token ? JSON.parse(localStorage.getItem('user')) : null;
 let appliedCoupon = null;
 
+async function fetchWithTimeout(url, options = {}, timeout = 10000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(id);
+    return response;
+  } catch (error) {
+    clearTimeout(id);
+    if (error.name === 'AbortError') throw new Error('Request timeout');
+    throw error;
+  }
+}
+
 function showToast(message, type = 'success') {
   const toast = document.createElement('div');
   toast.className = `toast ${type === 'error' ? 'bg-red-600' : 'bg-green-600'}`;
@@ -56,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.location.pathname.includes('wishlist.html')) {
     if (!currentUser) { window.location.href = 'account.html'; }
     else {
-      fetch(`${API_BASE}/user/wishlist`, { headers: { 'Authorization': `Bearer ${token}` } }).then(res => res.json()).then(wishlist => {
+      fetchWithTimeout(`${API_BASE}/user/wishlist`, { headers: { 'Authorization': `Bearer ${token}` } }).then(res => res.json()).then(wishlist => {
         const container = document.getElementById('wishlistContainer');
         if (container) {
           if (wishlist.length === 0) container.innerHTML = '<p>Your wishlist is empty.</p>';
@@ -69,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadSharedData() {
   try {
-    const productsRes = await fetch(`${API_BASE}/products`);
+    const productsRes = await fetchWithTimeout(`${API_BASE}/products`);
     window.allProducts = await productsRes.json();
   } catch (err) { console.error(err); }
 }
@@ -106,13 +120,13 @@ function generateStarRating(rating) {
 }
 
 if (document.getElementById('featured-products')) {
-  fetch(`${API_BASE}/products`).then(res => res.json()).then(products => {
+  fetchWithTimeout(`${API_BASE}/products`).then(res => res.json()).then(products => {
     document.getElementById('featured-products').innerHTML = products.slice(0,4).map(p => renderProductCard(p)).join('');
   });
 }
 
 if (document.getElementById('related-products')) {
-  fetch(`${API_BASE}/products`).then(res => res.json()).then(products => {
+  fetchWithTimeout(`${API_BASE}/products`).then(res => res.json()).then(products => {
     document.getElementById('related-products').innerHTML = products.slice(0,3).map(p => renderProductCard(p, true, false)).join('');
   });
 }
@@ -135,7 +149,7 @@ document.addEventListener('click', (e) => {
     if (!currentUser) { showToast('Please login to add to wishlist', 'error'); window.location.href = 'account.html'; return; }
     const btn = e.target.closest('.add-to-wishlist');
     const id = btn.dataset.id;
-    fetch(`${API_BASE}/user/wishlist/${id}`, {
+    fetchWithTimeout(`${API_BASE}/user/wishlist/${id}`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` }
     }).then(res => {
@@ -161,7 +175,7 @@ async function initShopPage() {
   await loadFilterOptions();
 
   async function filterAndRender() {
-    const res = await fetch(`${API_BASE}/products`);
+    const res = await fetchWithTimeout(`${API_BASE}/products`);
     const all = await res.json();
     filteredProducts = all.filter(p => {
       if (searchQuery && !p.name.toLowerCase().includes(searchQuery) && !p.description?.toLowerCase().includes(searchQuery)) return false;
@@ -232,8 +246,8 @@ async function initShopPage() {
 async function loadFilterOptions() {
   try {
     const [categoriesRes, subcatsRes] = await Promise.all([
-      fetch(`${API_BASE}/categories`),
-      fetch(`${API_BASE}/subcategories`)
+      fetchWithTimeout(`${API_BASE}/categories`),
+      fetchWithTimeout(`${API_BASE}/subcategories`)
     ]);
     const categories = await categoriesRes.json();
     const subcats = await subcatsRes.json();
@@ -260,7 +274,7 @@ async function loadFilterOptions() {
 
 async function loadSlider() {
   try {
-    const res = await fetch(`${API_BASE}/banners`);
+    const res = await fetchWithTimeout(`${API_BASE}/banners`);
     const banners = await res.json();
     const container = document.getElementById('sliderContainer');
     if (!container) return;
@@ -354,7 +368,7 @@ function updateCartSummary() {
 document.getElementById('applyCoupon')?.addEventListener('click', async function() {
   const code = document.getElementById('couponCode').value.trim().toUpperCase();
   try {
-    const res = await fetch(`${API_BASE}/coupons`);
+    const res = await fetchWithTimeout(`${API_BASE}/coupons`);
     const coupons = await res.json();
     const found = coupons.find(c => c.code === code && c.active && (!c.expiry || new Date(c.expiry) > new Date()));
     if (found) {
@@ -429,7 +443,7 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async functi
     total
   };
   try {
-    const res = await fetch(`${API_BASE}/orders`, {
+    const res = await fetchWithTimeout(`${API_BASE}/orders`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify(orderData)
@@ -485,14 +499,14 @@ async function loadWishlistTab() {
   const container = document.getElementById('wishlistItems');
   if (!container) return;
   try {
-    const res = await fetch(`${API_BASE}/user/wishlist`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const res = await fetchWithTimeout(`${API_BASE}/user/wishlist`, { headers: { 'Authorization': `Bearer ${token}` } });
     const wishlist = await res.json();
     if (wishlist.length === 0) { container.innerHTML = '<p class="text-gray-500">Your wishlist is empty.</p>'; return; }
     container.innerHTML = wishlist.map(p => `<div class="flex items-center border rounded-lg p-4"><img src="${p.images[0]}" alt="${p.name}" class="w-16 h-16 object-cover rounded"><div class="ml-4 flex-1"><h3 class="font-semibold">${p.name}</h3><p class="text-amber-800 font-bold">৳${p.price}</p></div><button class="text-red-500 hover:text-red-700 remove-wishlist" data-id="${p._id}"><i class="fas fa-trash"></i></button></div>`).join('');
     document.querySelectorAll('.remove-wishlist').forEach(btn => {
       btn.addEventListener('click', async function() {
         const id = this.dataset.id;
-        await fetch(`${API_BASE}/user/wishlist/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+        await fetchWithTimeout(`${API_BASE}/user/wishlist/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
         loadWishlistTab();
         showToast('Removed from wishlist');
       });
@@ -504,7 +518,7 @@ async function loadOrdersTab() {
   const recentOrders = document.getElementById('recentOrders');
   if (!recentOrders) return;
   try {
-    const res = await fetch(`${API_BASE}/orders/user`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const res = await fetchWithTimeout(`${API_BASE}/orders/user`, { headers: { 'Authorization': `Bearer ${token}` } });
     const orders = await res.json();
     if (orders.length === 0) { recentOrders.innerHTML = '<p>No orders yet.</p>'; return; }
     recentOrders.innerHTML = orders.slice(0,5).map(order => `<div class="border rounded-lg p-4 cursor-pointer hover:shadow-md" onclick="viewOrderDetails('${order._id}')"><div class="flex justify-between mb-2"><span class="font-semibold">Order #${order.orderId || order._id.slice(-6)}</span><span class="text-${order.status === 'Delivered' ? 'green' : 'blue'}-600">${order.status}</span></div><p class="text-sm text-gray-600">Placed on: ${new Date(order.createdAt).toLocaleDateString()}</p><p class="text-sm text-gray-600">Total: ৳${order.total}</p><p class="text-sm text-gray-600">Items: ${order.items.length}</p></div>`).join('');
@@ -521,7 +535,7 @@ document.getElementById('loginForm')?.addEventListener('submit', async function(
   const email = document.getElementById('loginEmail').value;
   const password = document.getElementById('loginPassword').value;
   try {
-    const res = await fetch(`${API_BASE}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+    const res = await fetchWithTimeout(`${API_BASE}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
     const data = await res.json();
     if (res.ok) {
       token = data.token; currentUser = data.user;
@@ -540,7 +554,7 @@ document.getElementById('registerForm')?.addEventListener('submit', async functi
   const confirm = document.getElementById('regConfirm').value;
   if (password !== confirm) { document.getElementById('registerMessage').textContent = 'Passwords do not match'; return; }
   try {
-    const res = await fetch(`${API_BASE}/auth/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, password, phone }) });
+    const res = await fetchWithTimeout(`${API_BASE}/auth/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, password, phone }) });
     const data = await res.json();
     if (res.ok) {
       token = data.token; currentUser = data.user;
@@ -561,7 +575,7 @@ async function loadProductPage() {
   const productId = urlParams.get('id');
   if (!productId) return;
   try {
-    const productRes = await fetch(`${API_BASE}/products/${productId}`);
+    const productRes = await fetchWithTimeout(`${API_BASE}/products/${productId}`);
     const product = await productRes.json();
     const container = document.getElementById('productDetailContainer');
     if (!container) return;
@@ -587,7 +601,7 @@ async function loadProductPage() {
       saveCart();
       window.location.href = 'checkout.html';
     });
-    const reviewsRes = await fetch(`${API_BASE}/reviews/product/${productId}`);
+    const reviewsRes = await fetchWithTimeout(`${API_BASE}/reviews/product/${productId}`);
     const reviews = await reviewsRes.json();
     document.getElementById('reviewCount').textContent = reviews.length;
     const reviewsList = document.getElementById('reviewsList');
@@ -595,7 +609,7 @@ async function loadProductPage() {
       if (reviews.length === 0) reviewsList.innerHTML = '<p>No reviews yet.</p>';
       else reviewsList.innerHTML = reviews.map(r => `<div class="border-b pb-4"><div class="flex items-center mb-2"><div class="flex text-yellow-400">${generateStarRating(r.rating)}</div><span class="ml-2 font-semibold">${r.name}</span><span class="ml-auto text-sm text-gray-500">${r.date}</span></div><p class="text-gray-600">${r.text}</p></div>`).join('');
     }
-    const relatedRes = await fetch(`${API_BASE}/products`);
+    const relatedRes = await fetchWithTimeout(`${API_BASE}/products`);
     const allProducts = await relatedRes.json();
     const relatedContainer = document.getElementById('relatedProducts');
     if (relatedContainer) {
@@ -635,7 +649,7 @@ document.getElementById('submitReview')?.addEventListener('click', async functio
   const text = document.getElementById('reviewText').value.trim();
   if (!text) { showToast('Please write a review', 'error'); return; }
   try {
-    const res = await fetch(`${API_BASE}/reviews`, {
+    const res = await fetchWithTimeout(`${API_BASE}/reviews`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ productId, rating, text })
@@ -679,5 +693,19 @@ if (document.getElementById('ratingStars')) {
         else { s.classList.remove('fas'); s.classList.add('far'); }
       });
     });
+  });
+}
+
+const productImagesInput = document.getElementById('product-images');
+if (productImagesInput) {
+  productImagesInput.addEventListener('change', async (e) => {
+    const files = Array.from(e.target.files);
+    for (let file of files) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Each image must be less than 5MB');
+        productImagesInput.value = '';
+        return;
+      }
+    }
   });
 }

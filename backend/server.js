@@ -10,6 +10,7 @@ const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const rateLimit = require('express-rate-limit');
 const compression = require('compression');
 const NodeCache = require('node-cache');
+const timeout = require('connect-timeout');
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
@@ -20,13 +21,8 @@ process.on('uncaughtException', (err) => {
 });
 
 const requiredEnv = [
-  'MONGODB_URI',
-  'JWT_SECRET',
-  'CLOUDINARY_CLOUD_NAME',
-  'CLOUDINARY_API_KEY',
-  'CLOUDINARY_API_SECRET',
-  'ADMIN_EMAIL',
-  'ADMIN_PASSWORD'
+  'MONGODB_URI', 'JWT_SECRET', 'CLOUDINARY_CLOUD_NAME',
+  'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET', 'ADMIN_EMAIL', 'ADMIN_PASSWORD'
 ];
 const missingEnv = requiredEnv.filter(key => !process.env[key]);
 if (missingEnv.length > 0) {
@@ -35,10 +31,13 @@ if (missingEnv.length > 0) {
 }
 
 const app = express();
-const cache = new NodeCache({ stdTTL: 60 });
+const cache = new NodeCache({ stdTTL: 60, checkperiod: 120, maxKeys: 100 });
+
+app.use(timeout('30s'));
+app.use((req, res, next) => { if (!req.timedout) next(); });
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(compression());
 
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
@@ -54,14 +53,22 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: { folder: 'khejur-ghee-semai', allowed_formats: ['jpg', 'jpeg', 'png', 'webp'] }
 });
-const upload = multer({ storage });
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => {
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('MongoDB connected');
+  } catch (err) {
     console.error('MongoDB connection error:', err);
-    process.exit(1);
-  });
+    setTimeout(connectDB, 5000);
+  }
+};
+connectDB();
+mongoose.connection.on('disconnected', () => {
+  console.log('MongoDB disconnected! Reconnecting...');
+  setTimeout(connectDB, 5000);
+});
 
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -193,9 +200,12 @@ const adminAuth = async (req, res, next) => {
   }
 };
 
+app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
+
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
+    if (!name || !email || !password) return res.status(400).json({ message: 'Missing fields' });
     const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ message: 'Email already registered' });
     const hashed = await bcrypt.hash(password, 10);
@@ -212,6 +222,7 @@ app.post('/api/auth/register', async (req, res) => {
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ message: 'Missing credentials' });
     const user = await User.findOne({ email });
     if (!user) return res.status(401).json({ message: 'Invalid credentials' });
     const isMatch = await bcrypt.compare(password, user.password);
@@ -259,8 +270,18 @@ app.delete('/api/user/wishlist/:productId', auth, async (req, res) => {
   }
 });
 
-app.post('/api/upload', adminAuth, upload.single('image'), (req, res) => {
-  res.json({ url: req.file.path });
+app.post('/api/upload', adminAuth, (req, res) => {
+  upload.single('image')(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') return res.status(400).json({ message: 'File too large (max 5MB)' });
+      return res.status(400).json({ message: 'Upload error: ' + err.message });
+    } else if (err) {
+      console.error('Upload error:', err);
+      return res.status(500).json({ message: 'Image upload failed' });
+    }
+    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+    res.json({ url: req.file.path });
+  });
 });
 
 app.get('/api/products', async (req, res) => {
@@ -585,6 +606,14 @@ app.put('/api/settings', adminAuth, async (req, res) => {
   }
 });
 
+app.use((req, res) => res.status(404).json({ message: 'Route not found' }));
+
+app.use((err, req, res, next) => {
+  if (req.timedout) return res.status(408).json({ message: 'Request timeout' });
+  console.error('Unhandled error:', err);
+  res.status(500).json({ message: 'Internal server error' });
+});
+
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
@@ -595,4 +624,9 @@ server.on('error', (err) => {
     console.error('Server error:', err);
   }
   process.exit(1);
+});
+
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, closing gracefully...');
+  server.close(() => mongoose.connection.close(false, () => process.exit(0)));
 });
