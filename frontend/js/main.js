@@ -1,4 +1,4 @@
-const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:5000/api' : 'https://your-backend-url.onrender.com/api';
+const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:5000/api' : 'https://khejur-ghee-semai.onrender.com/api';
 let cart = JSON.parse(localStorage.getItem('cart')) || [];
 let token = localStorage.getItem('token');
 let currentUser = token ? JSON.parse(localStorage.getItem('user')) : null;
