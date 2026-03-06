@@ -1,7 +1,7 @@
 {
   "name": "khejur-ghee-semai-backend",
   "version": "1.0.0",
-  "description": "Backend for admin panel and e-commerce",
+  "description": "Backend for e-commerce and admin panel",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
