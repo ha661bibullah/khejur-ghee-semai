@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop - Khejur Ghee Semai</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-gray-50">
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex items-center">
+                    <a href="index.html" class="text-2xl font-bold text-amber-800">🍯 Khejur Ghee Semai</a>
+                    <nav class="desktop-nav hidden md:flex">
+                        <a href="index.html">Home</a>
+                        <a href="shop.html">Shop</a>
+                        <a href="about.html">About Us</a>
+                        <a href="contact.html">Contact</a>
+                    </nav>
+                </div>
+                <div class="hidden md:flex flex-1 max-w-md mx-8">
+                    <form id="searchForm" class="relative w-full" action="shop.html" method="get">
+                        <input type="text" name="q" placeholder="Search products..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-amber-500">
+                        <button type="submit" class="absolute right-2 top-2 text-gray-400"><i class="fas fa-search"></i></button>
+                    </form>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="account.html" class="text-gray-600 hover:text-amber-800"><i class="fas fa-user text-xl"></i></a>
+                    <a href="cart.html" class="text-gray-600 hover:text-amber-800 relative">
+                        <i class="fas fa-shopping-cart text-xl"></i>
+                        <span class="absolute -top-2 -right-2 bg-amber-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center cart-count">0</span>
+                    </a>
+                    <a href="wishlist.html" class="text-gray-600 hover:text-amber-800 wishlist-icon"><i class="fas fa-heart text-xl"></i></a>
+                    <button class="md:hidden text-gray-600" id="menuBtn"><i class="fas fa-bars text-xl"></i></button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden" id="sidebar">
+        <div class="w-64 bg-white h-full p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold">Menu</h2>
+                <button class="text-gray-500" id="closeSidebar"><i class="fas fa-times"></i></button>
+            </div>
+            <nav class="space-y-4">
+                <a href="index.html" class="block text-gray-700 hover:text-amber-800">Home</a>
+                <a href="shop.html" class="block text-gray-700 hover:text-amber-800">Shop</a>
+                <a href="about.html" class="block text-gray-700 hover:text-amber-800">About Us</a>
+                <a href="contact.html" class="block text-gray-700 hover:text-amber-800">Contact</a>
+                <a href="account.html" class="block text-gray-700 hover:text-amber-800">My Account</a>
+            </nav>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex flex-col md:flex-row gap-8">
+            <div class="md:w-1/4">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h2 class="text-xl font-bold mb-4">Filters</h2>
+                    
+                    <div class="mb-6">
+                        <h3 class="font-semibold mb-3">Categories</h3>
+                        <div class="space-y-2" id="categoryFilters">
+                            <label class="flex items-center"><input type="checkbox" value="Premium" class="mr-2 filter-category"> Premium Pack</label>
+                            <label class="flex items-center"><input type="checkbox" value="Family" class="mr-2 filter-category"> Family Pack</label>
+                            <label class="flex items-center"><input type="checkbox" value="Gift" class="mr-2 filter-category"> Gift Box</label>
+                            <label class="flex items-center"><input type="checkbox" value="Bulk" class="mr-2 filter-category"> Bulk Order</label>
+                            <label class="flex items-center"><input type="checkbox" value="Ramadan" class="mr-2 filter-category"> Ramadan Special</label>
+                        </div>
+                    </div>
+                    
+                   <!-- Inside the filters sidebar, replace the Product Types section with: -->
+<div class="mb-6">
+    <h3 class="font-semibold mb-3">Product Types</h3>
+    <div class="space-y-2">
+        <label class="flex items-center"><input type="checkbox" value="dates" class="mr-2 filter-subcategory"> Dates</label>
+        <label class="flex items-center"><input type="checkbox" value="ghee" class="mr-2 filter-subcategory"> Ghee</label>
+        <label class="flex items-center"><input type="checkbox" value="honey" class="mr-2 filter-subcategory"> Honey</label>
+        <label class="flex items-center"><input type="checkbox" value="oil" class="mr-2 filter-subcategory"> Oil</label>
+    </div>
+</div>
+                    
+                    <div class="mb-6">
+                        <h3 class="font-semibold mb-3">Price Range</h3>
+                        <input type="range" id="priceRange" class="w-full" min="0" max="5000" value="5000">
+                        <div class="flex justify-between mt-2"><span>৳0</span><span>৳5000</span></div>
+                        <p class="text-sm mt-1">Max: <span id="priceValue">5000</span></p>
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-semibold mb-3">Rating</h3>
+                        <div class="space-y-2" id="ratingFilters">
+                            <label class="flex items-center"><input type="checkbox" value="5" class="mr-2 filter-rating"> 5 Star</label>
+                            <label class="flex items-center"><input type="checkbox" value="4" class="mr-2 filter-rating"> 4 Star & Up</label>
+                            <label class="flex items-center"><input type="checkbox" value="3" class="mr-2 filter-rating"> 3 Star & Up</label>
+                        </div>
+                    </div>
+                    <button id="clearFilters" class="mt-4 w-full bg-gray-200 text-gray-800 py-2 rounded hover:bg-gray-300">Clear Filters</button>
+                </div>
+            </div>
+            
+            <div class="md:w-3/4">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-2xl font-bold">All Products</h1>
+                    <div class="flex gap-2">
+                        <button id="filterBtn" class="md:hidden border px-4 py-2 rounded-lg flex items-center"><i class="fas fa-filter mr-2"></i>Filter</button>
+                        <select id="sortSelect" class="border rounded-lg px-4 py-2">
+                            <option value="default">Sort by: Default</option>
+                            <option value="priceLow">Price: Low to High</option>
+                            <option value="priceHigh">Price: High to Low</option>
+                            <option value="rating">Rating</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6" id="productGrid">
+                </div>
+                
+                <div class="flex justify-center mt-8 space-x-2" id="pagination">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden" id="filterSidebar">
+        <div class="w-64 bg-white h-full p-6 ml-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold">Filters</h2>
+                <button class="text-gray-500" id="closeFilter"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="space-y-4">
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Khejur Ghee Semai</h3>
+                    <p class="text-gray-400">Premium traditional sweets made with pure ghee and finest dates.</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Quick Links</h4>
+                    <ul class="space-y-2">
+                        <li><a href="about.html" class="text-gray-400 hover:text-white">About Us</a></li>
+                        <li><a href="contact.html" class="text-gray-400 hover:text-white">Contact</a></li>
+                        <li><a href="faq.html" class="text-gray-400 hover:text-white">FAQ</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Policies</h4>
+                    <ul class="space-y-2">
+                        <li><a href="privacy.html" class="text-gray-400 hover:text-white">Privacy Policy</a></li>
+                        <li><a href="terms.html" class="text-gray-400 hover:text-white">Terms & Conditions</a></li>
+                        <li><a href="return.html" class="text-gray-400 hover:text-white">Return Policy</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Follow Us</h4>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white text-xl"><i class="fab fa-facebook"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white text-xl"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white text-xl"><i class="fab fa-twitter"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 Khejur Ghee Semai. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Khejur Ghee Semai - Premium Traditional Sweets</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-gray-50">
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex items-center">
+                    <a href="index.html" class="text-2xl font-bold text-amber-800">🍯 Khejur Ghee Semai</a>
+                    <nav class="desktop-nav hidden md:flex">
+                        <a href="index.html">Home</a>
+                        <a href="shop.html">Shop</a>
+                        <a href="about.html">About Us</a>
+                        <a href="contact.html">Contact</a>
+                    </nav>
+                </div>
+                <div class="hidden md:flex flex-1 max-w-md mx-8">
+                    <form id="searchForm" class="relative w-full" action="shop.html" method="get">
+                        <input type="text" name="q" placeholder="Search products..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-amber-500">
+                        <button type="submit" class="absolute right-2 top-2 text-gray-400">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </form>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="account.html" class="text-gray-600 hover:text-amber-800"><i class="fas fa-user text-xl"></i></a>
+                    <a href="cart.html" class="text-gray-600 hover:text-amber-800 relative">
+                        <i class="fas fa-shopping-cart text-xl"></i>
+                        <span class="absolute -top-2 -right-2 bg-amber-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center cart-count">0</span>
+                    </a>
+                    <a href="wishlist.html" class="text-gray-600 hover:text-amber-800 wishlist-icon"><i class="fas fa-heart text-xl"></i></a>
+                    <button class="md:hidden text-gray-600" id="menuBtn"><i class="fas fa-bars text-xl"></i></button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden" id="sidebar">
+        <div class="w-64 bg-white h-full p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold">Menu</h2>
+                <button class="text-gray-500" id="closeSidebar"><i class="fas fa-times"></i></button>
+            </div>
+            <nav class="space-y-4">
+                <a href="index.html" class="block text-gray-700 hover:text-amber-800">Home</a>
+                <a href="shop.html" class="block text-gray-700 hover:text-amber-800">Shop</a>
+                <a href="about.html" class="block text-gray-700 hover:text-amber-800">About Us</a>
+                <a href="contact.html" class="block text-gray-700 hover:text-amber-800">Contact</a>
+                <a href="account.html" class="block text-gray-700 hover:text-amber-800">My Account</a>
+            </nav>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="relative overflow-hidden rounded-2xl h-[400px]">
+            <div class="slider-container flex transition-transform duration-500 ease-in-out">
+                <div class="slider-slide min-w-full">
+                    <img src="https://images.unsplash.com/photo-1606318801954-f46e86d4f81a?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Banner 1" class="w-full h-[400px] object-cover">
+                    <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40">
+                        <div class="text-center text-white">
+                            <h2 class="text-4xl font-bold mb-4">Traditional Khejur Ghee Semai</h2>
+                            <p class="text-xl mb-6">Made with pure ghee and premium dates</p>
+                            <a href="shop.html" class="bg-amber-600 text-white px-8 py-3 rounded-lg hover:bg-amber-700">Shop Now</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="slider-slide min-w-full">
+                    <img src="https://images.unsplash.com/photo-1551024506-0bccd828d307?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Banner 2" class="w-full h-[400px] object-cover">
+                    <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40">
+                        <div class="text-center text-white">
+                            <h2 class="text-4xl font-bold mb-4">Special Eid Collection</h2>
+                            <p class="text-xl mb-6">Get 20% off on bulk orders</p>
+                            <a href="shop.html" class="bg-amber-600 text-white px-8 py-3 rounded-lg hover:bg-amber-700">Explore</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="absolute left-4 top-1/2 -translate-y-1/2 bg-white bg-opacity-50 hover:bg-opacity-75 rounded-full p-2" id="prevSlide"><i class="fas fa-chevron-left"></i></button>
+            <button class="absolute right-4 top-1/2 -translate-y-1/2 bg-white bg-opacity-50 hover:bg-opacity-75 rounded-full p-2" id="nextSlide"><i class="fas fa-chevron-right"></i></button>
+        </div>
+    </div>
+
+    <section class="container mx-auto px-4 py-12">
+        <h2 class="text-3xl font-bold text-center mb-8">Featured Products</h2>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6" id="featured-products">
+        </div>
+    </section>
+
+    <section class="container mx-auto px-4 py-12 bg-gray-100">
+        <h2 class="text-3xl font-bold text-center mb-8">You May Also Like</h2>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6" id="related-products">
+        </div>
+    </section>
+
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Khejur Ghee Semai</h3>
+                    <p class="text-gray-400">Premium traditional sweets made with pure ghee and finest dates.</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Quick Links</h4>
+                    <ul class="space-y-2">
+                        <li><a href="about.html" class="text-gray-400 hover:text-white">About Us</a></li>
+                        <li><a href="contact.html" class="text-gray-400 hover:text-white">Contact</a></li>
+                        <li><a href="faq.html" class="text-gray-400 hover:text-white">FAQ</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Policies</h4>
+                    <ul class="space-y-2">
+                        <li><a href="privacy.html" class="text-gray-400 hover:text-white">Privacy Policy</a></li>
+                        <li><a href="terms.html" class="text-gray-400 hover:text-white">Terms & Conditions</a></li>
+                        <li><a href="return.html" class="text-gray-400 hover:text-white">Return Policy</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Follow Us</h4>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white text-xl"><i class="fab fa-facebook"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white text-xl"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white text-xl"><i class="fab fa-twitter"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 Khejur Ghee Semai. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

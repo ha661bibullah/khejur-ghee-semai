@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - Khejur Ghee Semai</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    /* Custom styles for admin panel */
+    .sidebar-link.active {
+      background-color: #b45309;
+      color: white;
+    }
+    .product-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body class="bg-gray-100 font-sans">
+  <div id="app" class="min-h-screen flex flex-col">
+    <!-- Login View -->
+    <div id="login-view" class="flex items-center justify-center min-h-screen bg-gray-100">
+      <div class="bg-white p-8 rounded-lg shadow-md w-96">
+        <h2 class="text-2xl font-bold mb-6 text-center text-amber-800">Admin Login</h2>
+        <form id="login-form">
+          <div class="mb-4">
+            <label class="block mb-2">Email</label>
+            <input type="email" id="login-email" required class="w-full border rounded-lg px-4 py-2">
+          </div>
+          <div class="mb-6">
+            <label class="block mb-2">Password</label>
+            <input type="password" id="login-password" required class="w-full border rounded-lg px-4 py-2">
+          </div>
+          <button type="submit" class="w-full bg-amber-600 text-white py-3 rounded-lg hover:bg-amber-700">Login</button>
+          <p id="login-error" class="text-red-500 text-sm mt-2 text-center hidden"></p>
+        </form>
+      </div>
+    </div>
+
+    <!-- Dashboard View (hidden initially) -->
+    <div id="dashboard-view" class="hidden flex-1 flex">
+      <!-- Sidebar -->
+      <aside class="w-64 bg-gray-900 text-white p-6">
+        <h1 class="text-2xl font-bold mb-8 text-amber-400">🍯 Admin Panel</h1>
+        <nav class="space-y-2">
+          <button class="sidebar-link w-full text-left px-4 py-3 rounded hover:bg-gray-800 flex items-center gap-3" data-section="dashboard">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+          </button>
+          <button class="sidebar-link w-full text-left px-4 py-3 rounded hover:bg-gray-800 flex items-center gap-3" data-section="products">
+            <i class="fas fa-box"></i> Products
+          </button>
+          <button class="sidebar-link w-full text-left px-4 py-3 rounded hover:bg-gray-800 flex items-center gap-3" data-section="orders">
+            <i class="fas fa-shopping-cart"></i> Orders
+          </button>
+          <button class="sidebar-link w-full text-left px-4 py-3 rounded hover:bg-gray-800 flex items-center gap-3" data-section="users">
+            <i class="fas fa-users"></i> Users
+          </button>
+          <button id="logout-btn" class="w-full text-left px-4 py-3 rounded hover:bg-gray-800 flex items-center gap-3 text-red-400">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </button>
+        </nav>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="flex-1 p-8 overflow-auto">
+        <!-- Dashboard Section -->
+        <div id="dashboard-section" class="section hidden">
+          <h2 class="text-3xl font-bold mb-6">Dashboard</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-gray-500">Total Products</p>
+                  <p id="total-products" class="text-3xl font-bold">0</p>
+                </div>
+                <i class="fas fa-box text-4xl text-amber-600"></i>
+              </div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-gray-500">Total Orders</p>
+                  <p id="total-orders" class="text-3xl font-bold">0</p>
+                </div>
+                <i class="fas fa-shopping-cart text-4xl text-amber-600"></i>
+              </div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-gray-500">Total Users</p>
+                  <p id="total-users" class="text-3xl font-bold">0</p>
+                </div>
+                <i class="fas fa-users text-4xl text-amber-600"></i>
+              </div>
+            </div>
+          </div>
+          <h3 class="text-xl font-bold mb-4">Recent Orders</h3>
+          <div class="bg-white rounded-lg shadow overflow-hidden">
+            <table class="w-full">
+              <thead class="bg-gray-200">
+                <tr>
+                  <th class="p-3 text-left">Order ID</th>
+                  <th class="p-3 text-left">Customer</th>
+                  <th class="p-3 text-left">Total</th>
+                  <th class="p-3 text-left">Status</th>
+                  <th class="p-3 text-left">Date</th>
+                </tr>
+              </thead>
+              <tbody id="recent-orders-table" class="divide-y"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Products Section -->
+        <div id="products-section" class="section hidden">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-3xl font-bold">Products</h2>
+            <button id="add-product-btn" class="bg-amber-600 text-white px-4 py-2 rounded hover:bg-amber-700">
+              <i class="fas fa-plus mr-2"></i>Add Product
+            </button>
+          </div>
+          <div id="product-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+          <!-- Product Modal (hidden) -->
+          <div id="product-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <h3 id="modal-title" class="text-2xl font-bold mb-4">Add Product</h3>
+              <form id="product-form" enctype="multipart/form-data">
+                <input type="hidden" id="product-id">
+                <div class="mb-4">
+                  <label class="block mb-2">Name *</label>
+                  <input type="text" id="product-name" required class="w-full border rounded px-4 py-2">
+                </div>
+                <div class="mb-4">
+                  <label class="block mb-2">Price *</label>
+                  <input type="number" id="product-price" required step="1" class="w-full border rounded px-4 py-2">
+                </div>
+                <div class="mb-4">
+                  <label class="block mb-2">Category</label>
+                  <input type="text" id="product-category" class="w-full border rounded px-4 py-2">
+                </div>
+                <div class="mb-4">
+                  <label class="block mb-2">Sub Categories (comma separated)</label>
+                  <input type="text" id="product-subcategories" class="w-full border rounded px-4 py-2">
+                </div>
+                <div class="mb-4">
+                  <label class="block mb-2">Description</label>
+                  <textarea id="product-description" rows="3" class="w-full border rounded px-4 py-2"></textarea>
+                </div>
+                <div class="mb-4">
+                  <label class="block mb-2">Weight</label>
+                  <input type="text" id="product-weight" class="w-full border rounded px-4 py-2">
+                </div>
+                <div class="mb-4">
+                  <label class="block mb-2">Rating (1-5)</label>
+                  <input type="number" id="product-rating" step="0.1" min="0" max="5" class="w-full border rounded px-4 py-2">
+                </div>
+                <div class="mb-4">
+                  <label class="block mb-2">Images (upload multiple)</label>
+                  <input type="file" id="product-images" accept="image/*" multiple class="w-full">
+                  <div id="image-preview" class="flex gap-2 mt-2 flex-wrap"></div>
+                </div>
+                <div class="mb-4">
+                  <label class="flex items-center">
+                    <input type="checkbox" id="product-instock" class="mr-2" checked> In Stock
+                  </label>
+                </div>
+                <div class="flex justify-end gap-4">
+                  <button type="button" id="close-modal" class="px-4 py-2 border rounded hover:bg-gray-100">Cancel</button>
+                  <button type="submit" class="bg-amber-600 text-white px-6 py-2 rounded hover:bg-amber-700">Save</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Orders Section -->
+        <div id="orders-section" class="section hidden">
+          <h2 class="text-3xl font-bold mb-6">Orders</h2>
+          <div class="bg-white rounded-lg shadow overflow-hidden">
+            <table class="w-full">
+              <thead class="bg-gray-200">
+                <tr>
+                  <th class="p-3 text-left">Order ID</th>
+                  <th class="p-3 text-left">Customer</th>
+                  <th class="p-3 text-left">Total</th>
+                  <th class="p-3 text-left">Status</th>
+                  <th class="p-3 text-left">Date</th>
+                  <th class="p-3 text-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="orders-table" class="divide-y"></tbody>
+            </table>
+          </div>
+
+          <!-- Order Details Modal -->
+          <div id="order-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <h3 class="text-2xl font-bold mb-4">Order Details</h3>
+              <div id="order-details"></div>
+              <div class="mt-4">
+                <label class="block mb-2">Update Status</label>
+                <select id="order-status" class="border rounded px-4 py-2 w-full">
+                  <option value="Processing">Processing</option>
+                  <option value="Shipped">Shipped</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </div>
+              <div class="flex justify-end gap-4 mt-6">
+                <button id="close-order-modal" class="px-4 py-2 border rounded hover:bg-gray-100">Close</button>
+                <button id="update-order-btn" class="bg-amber-600 text-white px-6 py-2 rounded hover:bg-amber-700">Update</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Users Section -->
+        <div id="users-section" class="section hidden">
+          <h2 class="text-3xl font-bold mb-6">Users</h2>
+          <div class="bg-white rounded-lg shadow overflow-hidden">
+            <table class="w-full">
+              <thead class="bg-gray-200">
+                <tr>
+                  <th class="p-3 text-left">Name</th>
+                  <th class="p-3 text-left">Email</th>
+                  <th class="p-3 text-left">Phone</th>
+                  <th class="p-3 text-left">Joined</th>
+                  <th class="p-3 text-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="users-table" class="divide-y"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin.includes('localhost') 
+      ? 'http://localhost:5000/api' 
+      : 'https://your-backend-url.onrender.com/api'; // Replace with your Render URL
+
+    let token = localStorage.getItem('adminToken');
+    let currentSection = 'dashboard';
+
+    // DOM elements
+    const loginView = document.getElementById('login-view');
+    const dashboardView = document.getElementById('dashboard-view');
+    const loginForm = document.getElementById('login-form');
+    const loginError = document.getElementById('login-error');
+    const logoutBtn = document.getElementById('logout-btn');
+    const sidebarLinks = document.querySelectorAll('.sidebar-link');
+    const sections = document.querySelectorAll('.section');
+
+    // Check token on load
+    if (token) {
+      showDashboard();
+      loadDashboard();
+    } else {
+      loginView.classList.remove('hidden');
+    }
+
+    // Login
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      try {
+        const res = await fetch(`${API_BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          token = data.token;
+          localStorage.setItem('adminToken', token);
+          showDashboard();
+          loadDashboard();
+        } else {
+          loginError.textContent = data.message;
+          loginError.classList.remove('hidden');
+        }
+      } catch (err) {
+        loginError.textContent = 'Server error';
+        loginError.classList.remove('hidden');
+      }
+    });
+
+    // Logout
+    logoutBtn.addEventListener('click', () => {
+      localStorage.removeItem('adminToken');
+      token = null;
+      dashboardView.classList.add('hidden');
+      loginView.classList.remove('hidden');
+    });
+
+    // Sidebar navigation
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        const section = link.dataset.section;
+        if (!section) return;
+        currentSection = section;
+        sidebarLinks.forEach(l => l.classList.remove('active', 'bg-amber-700'));
+        link.classList.add('active', 'bg-amber-700');
+        sections.forEach(s => s.classList.add('hidden'));
+        document.getElementById(`${section}-section`).classList.remove('hidden');
+        if (section === 'dashboard') loadDashboard();
+        if (section === 'products') loadProducts();
+        if (section === 'orders') loadOrders();
+        if (section === 'users') loadUsers();
+      });
+    });
+
+    function showDashboard() {
+      loginView.classList.add('hidden');
+      dashboardView.classList.remove('hidden');
+      // Activate dashboard by default
+      document.querySelector('[data-section="dashboard"]').click();
+    }
+
+    // ========== Dashboard ==========
+    async function loadDashboard() {
+      try {
+        const res = await fetch(`${API_BASE}/stats`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          document.getElementById('total-products').textContent = data.totalProducts;
+          document.getElementById('total-orders').textContent = data.totalOrders;
+          document.getElementById('total-users').textContent = data.totalUsers;
+          const tbody = document.getElementById('recent-orders-table');
+          tbody.innerHTML = data.recentOrders.map(order => `
+            <tr class="hover:bg-gray-50 cursor-pointer" onclick="viewOrder('${order._id}')">
+              <td class="p-3">${order.orderId || order._id.slice(-6)}</td>
+              <td class="p-3">${order.customerName}</td>
+              <td class="p-3">৳${order.total}</td>
+              <td class="p-3"><span class="px-2 py-1 rounded text-xs ${order.status === 'Delivered' ? 'bg-green-100 text-green-800' : order.status === 'Shipped' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}">${order.status}</span></td>
+              <td class="p-3">${new Date(order.createdAt).toLocaleDateString()}</td>
+            </tr>
+          `).join('');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // ========== Products ==========
+    const productList = document.getElementById('product-list');
+    const productModal = document.getElementById('product-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const productForm = document.getElementById('product-form');
+    const closeModal = document.getElementById('close-modal');
+    const addProductBtn = document.getElementById('add-product-btn');
+    const productId = document.getElementById('product-id');
+    const productName = document.getElementById('product-name');
+    const productPrice = document.getElementById('product-price');
+    const productCategory = document.getElementById('product-category');
+    const productSubcategories = document.getElementById('product-subcategories');
+    const productDescription = document.getElementById('product-description');
+    const productWeight = document.getElementById('product-weight');
+    const productRating = document.getElementById('product-rating');
+    const productInStock = document.getElementById('product-instock');
+    const productImages = document.getElementById('product-images');
+    const imagePreview = document.getElementById('image-preview');
+
+    let uploadedImages = [];
+
+    addProductBtn.addEventListener('click', () => {
+      resetProductForm();
+      modalTitle.textContent = 'Add Product';
+      productModal.classList.remove('hidden');
+      productModal.classList.add('flex');
+    });
+
+    closeModal.addEventListener('click', () => {
+      productModal.classList.add('hidden');
+      productModal.classList.remove('flex');
+    });
+
+    productImages.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files);
+      imagePreview.innerHTML = '';
+      uploadedImages = [];
+      for (let file of files) {
+        const formData = new FormData();
+        formData.append('image', file);
+        try {
+          const res = await fetch(`${API_BASE}/upload`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
+          });
+          const data = await res.json();
+          if (res.ok) {
+            uploadedImages.push(data.url);
+            const img = document.createElement('img');
+            img.src = data.url;
+            img.className = 'w-16 h-16 object-cover rounded';
+            imagePreview.appendChild(img);
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    });
+
+    productForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const productData = {
+        name: productName.value,
+        price: Number(productPrice.value),
+        category: productCategory.value,
+        subCategories: productSubcategories.value.split(',').map(s => s.trim()).filter(s => s),
+        description: productDescription.value,
+        weight: productWeight.value,
+        rating: productRating.value ? Number(productRating.value) : 4.5,
+        inStock: productInStock.checked,
+        images: uploadedImages
+      };
+      const id = productId.value;
+      const url = id ? `${API_BASE}/products/${id}` : `${API_BASE}/products`;
+      const method = id ? 'PUT' : 'POST';
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(productData)
+        });
+        if (res.ok) {
+          productModal.classList.add('hidden');
+          productModal.classList.remove('flex');
+          loadProducts();
+        } else {
+          alert('Failed to save product');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    });
+
+    async function loadProducts() {
+      try {
+        const res = await fetch(`${API_BASE}/products`);
+        const products = await res.json();
+        productList.innerHTML = products.map(p => `
+          <div class="bg-white rounded-lg shadow p-4 product-card">
+            <img src="${p.images?.[0] || 'https://via.placeholder.com/300'}" alt="${p.name}" class="w-full h-40 object-cover rounded mb-3">
+            <h3 class="font-bold text-lg">${p.name}</h3>
+            <p class="text-amber-800 font-bold">৳${p.price}</p>
+            <p class="text-sm text-gray-600 mb-2">${p.weight || ''}</p>
+            <div class="flex justify-between items-center mt-2">
+              <span class="text-sm ${p.inStock ? 'text-green-600' : 'text-red-600'}">${p.inStock ? 'In Stock' : 'Out of Stock'}</span>
+              <div>
+                <button onclick="editProduct('${p._id}')" class="text-blue-600 hover:text-blue-800 mr-2"><i class="fas fa-edit"></i></button>
+                <button onclick="deleteProduct('${p._id}')" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    window.editProduct = async (id) => {
+      try {
+        const res = await fetch(`${API_BASE}/products`);
+        const products = await res.json();
+        const product = products.find(p => p._id === id);
+        if (product) {
+          productId.value = product._id;
+          productName.value = product.name;
+          productPrice.value = product.price;
+          productCategory.value = product.category || '';
+          productSubcategories.value = product.subCategories ? product.subCategories.join(', ') : '';
+          productDescription.value = product.description || '';
+          productWeight.value = product.weight || '';
+          productRating.value = product.rating || 4.5;
+          productInStock.checked = product.inStock;
+          uploadedImages = product.images || [];
+          imagePreview.innerHTML = uploadedImages.map(url => `<img src="${url}" class="w-16 h-16 object-cover rounded">`).join('');
+          modalTitle.textContent = 'Edit Product';
+          productModal.classList.remove('hidden');
+          productModal.classList.add('flex');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    window.deleteProduct = async (id) => {
+      if (confirm('Are you sure?')) {
+        try {
+          await fetch(`${API_BASE}/products/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          loadProducts();
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    };
+
+    function resetProductForm() {
+      productId.value = '';
+      productName.value = '';
+      productPrice.value = '';
+      productCategory.value = '';
+      productSubcategories.value = '';
+      productDescription.value = '';
+      productWeight.value = '';
+      productRating.value = '4.5';
+      productInStock.checked = true;
+      productImages.value = '';
+      imagePreview.innerHTML = '';
+      uploadedImages = [];
+    }
+
+    // ========== Orders ==========
+    const ordersTable = document.getElementById('orders-table');
+    const orderModal = document.getElementById('order-modal');
+    const orderDetails = document.getElementById('order-details');
+    const orderStatusSelect = document.getElementById('order-status');
+    const updateOrderBtn = document.getElementById('update-order-btn');
+    const closeOrderModal = document.getElementById('close-order-modal');
+    let currentOrderId = null;
+
+    async function loadOrders() {
+      try {
+        const res = await fetch(`${API_BASE}/orders`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const orders = await res.json();
+        ordersTable.innerHTML = orders.map(order => `
+          <tr class="hover:bg-gray-50">
+            <td class="p-3">${order.orderId || order._id.slice(-6)}</td>
+            <td class="p-3">${order.customerName}</td>
+            <td class="p-3">৳${order.total}</td>
+            <td class="p-3"><span class="px-2 py-1 rounded text-xs ${order.status === 'Delivered' ? 'bg-green-100 text-green-800' : order.status === 'Shipped' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}">${order.status}</span></td>
+            <td class="p-3">${new Date(order.createdAt).toLocaleDateString()}</td>
+            <td class="p-3">
+              <button onclick="viewOrder('${order._id}')" class="text-amber-600 hover:text-amber-800"><i class="fas fa-eye"></i></button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    window.viewOrder = async (id) => {
+      try {
+        const res = await fetch(`${API_BASE}/orders/${id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const order = await res.json();
+        currentOrderId = order._id;
+        let itemsHtml = order.items.map(item => `
+          <tr><td>${item.name}</td><td>${item.quantity}</td><td>৳${item.price}</td><td>৳${item.price * item.quantity}</td></tr>
+        `).join('');
+        orderDetails.innerHTML = `
+          <p><strong>Order ID:</strong> ${order.orderId || order._id}</p>
+          <p><strong>Customer:</strong> ${order.customerName}</p>
+          <p><strong>Phone:</strong> ${order.phone}</p>
+          <p><strong>Address:</strong> ${order.address}</p>
+          <p><strong>Payment:</strong> ${order.paymentMethod}</p>
+          <p><strong>Shipping:</strong> ${order.shippingMethod} (৳${order.shippingCost})</p>
+          <p><strong>Order Date:</strong> ${new Date(order.createdAt).toLocaleString()}</p>
+          <table class="w-full mt-4 border">
+            <thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+            <tbody>${itemsHtml}</tbody>
+            <tfoot>
+              <tr><td colspan="3" class="text-right">Subtotal:</td><td>৳${order.subtotal}</td></tr>
+              ${order.discount ? `<tr><td colspan="3" class="text-right">Discount:</td><td>-৳${order.discount}</td></tr>` : ''}
+              <tr><td colspan="3" class="text-right font-bold">Total:</td><td class="font-bold">৳${order.total}</td></tr>
+            </tfoot>
+          </table>
+        `;
+        orderStatusSelect.value = order.status;
+        orderModal.classList.remove('hidden');
+        orderModal.classList.add('flex');
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    closeOrderModal.addEventListener('click', () => {
+      orderModal.classList.add('hidden');
+      orderModal.classList.remove('flex');
+    });
+
+    updateOrderBtn.addEventListener('click', async () => {
+      if (!currentOrderId) return;
+      const status = orderStatusSelect.value;
+      try {
+        await fetch(`${API_BASE}/orders/${currentOrderId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ status })
+        });
+        orderModal.classList.add('hidden');
+        orderModal.classList.remove('flex');
+        loadOrders();
+        loadDashboard();
+      } catch (err) {
+        console.error(err);
+      }
+    });
+
+    // ========== Users ==========
+    const usersTable = document.getElementById('users-table');
+
+    async function loadUsers() {
+      try {
+        const res = await fetch(`${API_BASE}/users`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const users = await res.json();
+        usersTable.innerHTML = users.filter(u => u.role !== 'admin').map(user => `
+          <tr>
+            <td class="p-3">${user.name}</td>
+            <td class="p-3">${user.email}</td>
+            <td class="p-3">${user.phone || '-'}</td>
+            <td class="p-3">${new Date(user.createdAt).toLocaleDateString()}</td>
+            <td class="p-3">
+              <button onclick="deleteUser('${user._id}')" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    window.deleteUser = async (id) => {
+      if (confirm('Delete this user?')) {
+        try {
+          await fetch(`${API_BASE}/users/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          loadUsers();
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    };
+
+    // Make functions global for onclick handlers
+    window.viewOrder = viewOrder;
+    window.editProduct = editProduct;
+    window.deleteProduct = deleteProduct;
+    window.deleteUser = deleteUser;
+  </script>
+</body>
+</html>
