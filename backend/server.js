@@ -11,6 +11,29 @@ const rateLimit = require('express-rate-limit');
 const compression = require('compression');
 const NodeCache = require('node-cache');
 
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
+
+const requiredEnv = [
+  'MONGODB_URI',
+  'JWT_SECRET',
+  'CLOUDINARY_CLOUD_NAME',
+  'CLOUDINARY_API_KEY',
+  'CLOUDINARY_API_SECRET',
+  'ADMIN_EMAIL',
+  'ADMIN_PASSWORD'
+];
+const missingEnv = requiredEnv.filter(key => !process.env[key]);
+if (missingEnv.length > 0) {
+  console.error(`Missing environment variables: ${missingEnv.join(', ')}`);
+  process.exit(1);
+}
+
 const app = express();
 const cache = new NodeCache({ stdTTL: 60 });
 
@@ -33,9 +56,12 @@ const storage = new CloudinaryStorage({
 });
 const upload = multer({ storage });
 
-mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('MongoDB connected'))
-  .catch(err => console.log(err));
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
+    process.exit(1);
+  });
 
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -57,6 +83,11 @@ const productSchema = new mongoose.Schema({
   weight: String,
   inStock: { type: Boolean, default: true }
 }, { timestamps: true });
+
+productSchema.index({ category: 1 });
+productSchema.index({ subCategories: 1 });
+productSchema.index({ price: 1 });
+productSchema.index({ rating: -1 });
 
 const orderSchema = new mongoose.Schema({
   orderId: { type: String, unique: true },
@@ -119,11 +150,6 @@ const Coupon = mongoose.model('Coupon', couponSchema);
 const Banner = mongoose.model('Banner', bannerSchema);
 const SiteSetting = mongoose.model('SiteSetting', siteSettingSchema);
 
-Product.collection.createIndex({ category: 1 });
-Product.collection.createIndex({ subCategories: 1 });
-Product.collection.createIndex({ price: 1 });
-Product.collection.createIndex({ rating: -1 });
-
 const seedAdmin = async () => {
   try {
     const adminExists = await User.findOne({ email: process.env.ADMIN_EMAIL });
@@ -133,7 +159,9 @@ const seedAdmin = async () => {
       await admin.save();
       console.log('Admin user created');
     }
-  } catch (err) { console.log(err); }
+  } catch (err) { 
+    console.error('Error seeding admin:', err); 
+  }
 };
 seedAdmin();
 
@@ -176,6 +204,7 @@ app.post('/api/auth/register', async (req, res) => {
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.status(201).json({ token, user: { id: user._id, name, email, phone } });
   } catch (err) {
+    console.error('Registration error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -190,6 +219,7 @@ app.post('/api/auth/login', async (req, res) => {
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user: { id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role } });
   } catch (err) {
+    console.error('Login error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -556,4 +586,13 @@ app.put('/api/settings', adminAuth, async (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use`);
+  } else {
+    console.error('Server error:', err);
+  }
+  process.exit(1);
+});
