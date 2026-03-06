@@ -98,20 +98,30 @@ const Order = mongoose.model('Order', orderSchema);
 // ==================== Seed Admin ====================
 const seedAdmin = async () => {
   try {
-    const adminExists = await User.findOne({ email: process.env.ADMIN_EMAIL });
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+
+    if (!adminEmail || !adminPassword) {
+      console.log('ADMIN_EMAIL or ADMIN_PASSWORD not set in environment');
+      return;
+    }
+
+    const adminExists = await User.findOne({ email: adminEmail });
     if (!adminExists) {
-      const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
+      const hashedPassword = await bcrypt.hash(adminPassword, 10);
       const admin = new User({
         name: 'Admin',
-        email: process.env.ADMIN_EMAIL,
+        email: adminEmail,
         password: hashedPassword,
         role: 'admin'
       });
       await admin.save();
-      console.log('Admin user created');
+      console.log('Admin user created with email:', adminEmail);
+    } else {
+      console.log('Admin user already exists');
     }
   } catch (err) {
-    console.log(err);
+    console.log('Error seeding admin:', err);
   }
 };
 seedAdmin();
@@ -168,6 +178,24 @@ app.post('/api/auth/login', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+// (Optional) Temporary route to create admin manually – remove after testing
+// app.post('/api/create-admin', async (req, res) => {
+//   try {
+//     const { email, password } = req.body;
+//     const hashed = await bcrypt.hash(password, 10);
+//     const admin = new User({
+//       name: 'Admin',
+//       email,
+//       password: hashed,
+//       role: 'admin'
+//     });
+//     await admin.save();
+//     res.json({ message: 'Admin created' });
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// });
 
 // Image upload
 app.post('/api/upload', auth, upload.single('image'), (req, res) => {
