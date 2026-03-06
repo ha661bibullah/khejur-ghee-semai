@@ -20,6 +20,10 @@ process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
 });
 
+process.on('warning', (warning) => {
+  console.warn('Process warning:', warning);
+});
+
 const requiredEnv = [
   'MONGODB_URI', 'JWT_SECRET', 'CLOUDINARY_CLOUD_NAME',
   'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET', 'ADMIN_EMAIL', 'ADMIN_PASSWORD'
@@ -57,7 +61,10 @@ const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
+    await mongoose.connect(process.env.MONGODB_URI, {
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    });
     console.log('MongoDB connected');
   } catch (err) {
     console.error('MongoDB connection error:', err);
@@ -65,9 +72,13 @@ const connectDB = async () => {
   }
 };
 connectDB();
+
 mongoose.connection.on('disconnected', () => {
   console.log('MongoDB disconnected! Reconnecting...');
   setTimeout(connectDB, 5000);
+});
+mongoose.connection.on('error', (err) => {
+  console.error('MongoDB connection error:', err);
 });
 
 const userSchema = new mongoose.Schema({
@@ -166,8 +177,8 @@ const seedAdmin = async () => {
       await admin.save();
       console.log('Admin user created');
     }
-  } catch (err) { 
-    console.error('Error seeding admin:', err); 
+  } catch (err) {
+    console.error('Error seeding admin:', err);
   }
 };
 seedAdmin();
@@ -630,3 +641,15 @@ process.on('SIGTERM', () => {
   console.log('SIGTERM received, closing gracefully...');
   server.close(() => mongoose.connection.close(false, () => process.exit(0)));
 });
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, closing gracefully...');
+  server.close(() => mongoose.connection.close(false, () => process.exit(0)));
+});
+
+setInterval(() => {
+  if (mongoose.connection.readyState === 1) {
+    console.log('Keeping MongoDB connection alive');
+    mongoose.connection.db.admin().ping();
+  }
+}, 300000);
