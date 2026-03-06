@@ -213,6 +213,8 @@ const adminAuth = async (req, res, next) => {
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
+app.get('/api/ping', (req, res) => res.send('pong'));
+
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
@@ -649,7 +651,11 @@ process.on('SIGINT', () => {
 
 setInterval(() => {
   if (mongoose.connection.readyState === 1) {
-    console.log('Keeping MongoDB connection alive');
-    mongoose.connection.db.admin().ping();
+    mongoose.connection.db.admin().ping().catch(err => console.error('Ping error:', err));
   }
-}, 300000);
+}, 60000);
+
+setInterval(() => {
+  const memoryUsage = process.memoryUsage();
+  console.log(`Memory: RSS=${Math.round(memoryUsage.rss / 1024 / 1024)}MB, Heap=${Math.round(memoryUsage.heapUsed / 1024 / 1024)}/${Math.round(memoryUsage.heapTotal / 1024 / 1024)}MB`);
+}, 600000);
