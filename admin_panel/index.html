@@ -70,8 +70,8 @@
       </div>
       <div id="coupons-section" class="section hidden">
         <div class="flex justify-between items-center mb-6"><h2 class="text-3xl font-bold">Coupons</h2><button id="add-coupon-btn" class="bg-amber-600 text-white px-4 py-2 rounded hover:bg-amber-700"><i class="fas fa-plus mr-2"></i>Add Coupon</button></div>
-        <div class="bg-white rounded-lg shadow overflow-hidden"><table class="w-full"><thead class="bg-gray-200"><tr><th class="p-3 text-left">Code</th><th class="p-3 text-left">Discount %</th><th class="p-3 text-left">Expiry</th><th class="p-3 text-left">Status</th><th class="p-3 text-left">Actions</th></tr></thead><tbody id="coupons-table" class="divide-y"></tbody></table></div>
-        <div id="coupon-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50"><div class="bg-white rounded-lg p-6 w-full max-w-md"><h3 id="coupon-modal-title" class="text-2xl font-bold mb-4">Add Coupon</h3><form id="coupon-form"><input type="hidden" id="coupon-id"><div class="mb-4"><label class="block mb-2">Code *</label><input type="text" id="coupon-code" required class="w-full border rounded px-4 py-2" placeholder="e.g., SAVE10"></div><div class="mb-4"><label class="block mb-2">Discount (%) *</label><input type="number" id="coupon-discount" min="1" max="100" required class="w-full border rounded px-4 py-2"></div><div class="mb-4"><label class="block mb-2">Expiry Date (optional)</label><input type="date" id="coupon-expiry" class="w-full border rounded px-4 py-2"></div><div class="mb-4"><label class="flex items-center"><input type="checkbox" id="coupon-active" class="mr-2" checked> Active</label></div><div class="flex justify-end gap-4"><button type="button" id="close-coupon-modal" class="px-4 py-2 border rounded hover:bg-gray-100">Cancel</button><button type="submit" class="bg-amber-600 text-white px-6 py-2 rounded hover:bg-amber-700">Save</button></div></form></div></div>
+        <div class="bg-white rounded-lg shadow overflow-hidden"><table class="w-full"><thead class="bg-gray-200"><tr><th class="p-3 text-left">Code</th><th class="p-3 text-left">Discount %</th><th class="p-3 text-left">Product</th><th class="p-3 text-left">Expiry</th><th class="p-3 text-left">Status</th><th class="p-3 text-left">Actions</th></tr></thead><tbody id="coupons-table" class="divide-y"></tbody></table></div>
+        <div id="coupon-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50"><div class="bg-white rounded-lg p-6 w-full max-w-md"><h3 id="coupon-modal-title" class="text-2xl font-bold mb-4">Add Coupon</h3><form id="coupon-form"><input type="hidden" id="coupon-id"><div class="mb-4"><label class="block mb-2">Code *</label><input type="text" id="coupon-code" required class="w-full border rounded px-4 py-2" placeholder="e.g., SAVE10"></div><div class="mb-4"><label class="block mb-2">Discount (%) *</label><input type="number" id="coupon-discount" min="1" max="100" required class="w-full border rounded px-4 py-2"></div><div class="mb-4"><label class="block mb-2">Apply to specific product (optional)</label><select id="coupon-product" class="w-full border rounded px-4 py-2"><option value="">All products</option></select></div><div class="mb-4"><label class="block mb-2">Expiry Date (optional)</label><input type="date" id="coupon-expiry" class="w-full border rounded px-4 py-2"></div><div class="mb-4"><label class="flex items-center"><input type="checkbox" id="coupon-active" class="mr-2" checked> Active</label></div><div class="flex justify-end gap-4"><button type="button" id="close-coupon-modal" class="px-4 py-2 border rounded hover:bg-gray-100">Cancel</button><button type="submit" class="bg-amber-600 text-white px-6 py-2 rounded hover:bg-amber-700">Save</button></div></form></div></div>
       </div>
       <div id="banners-section" class="section hidden">
         <div class="flex justify-between items-center mb-6"><h2 class="text-3xl font-bold">Banners</h2><button id="add-banner-btn" class="bg-amber-600 text-white px-4 py-2 rounded hover:bg-amber-700"><i class="fas fa-plus mr-2"></i>Add Banner</button></div>
@@ -86,7 +86,7 @@
   </div>
 </div>
 <script>
-const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:5000/api' : 'https://khejur-ghee-semai.onrender.com/api';
+const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:5000/api' : 'https://your-backend-url.onrender.com/api';
 let token = localStorage.getItem('adminToken');
 const loginView = document.getElementById('login-view');
 const dashboardView = document.getElementById('dashboard-view');
@@ -269,11 +269,31 @@ const couponExpiry = document.getElementById('coupon-expiry');
 const couponActive = document.getElementById('coupon-active');
 const addCouponBtn = document.getElementById('add-coupon-btn');
 const closeCouponModal = document.getElementById('close-coupon-modal');
-addCouponBtn.addEventListener('click', () => { resetCouponForm(); document.getElementById('coupon-modal-title').textContent = 'Add Coupon'; couponModal.classList.remove('hidden'); couponModal.classList.add('flex'); });
+async function loadProductOptions() {
+  try {
+    const res = await fetch(`${API_BASE}/products`);
+    const products = await res.json();
+    const select = document.getElementById('coupon-product');
+    select.innerHTML = '<option value="">All products</option>' + products.map(p => `<option value="${p._id}">${p.name}</option>`).join('');
+  } catch (err) { console.error(err); }
+}
+addCouponBtn.addEventListener('click', async () => {
+  await loadProductOptions();
+  resetCouponForm();
+  document.getElementById('coupon-modal-title').textContent = 'Add Coupon';
+  couponModal.classList.remove('hidden');
+  couponModal.classList.add('flex');
+});
 closeCouponModal.addEventListener('click', () => { couponModal.classList.add('hidden'); couponModal.classList.remove('flex'); });
 couponForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const data = { code: couponCode.value, discount: Number(couponDiscount.value), expiry: couponExpiry.value || null, active: couponActive.checked };
+  const data = {
+    code: couponCode.value,
+    discount: Number(couponDiscount.value),
+    productId: document.getElementById('coupon-product').value || null,
+    expiry: couponExpiry.value || null,
+    active: couponActive.checked
+  };
   const id = couponId.value;
   const url = id ? `${API_BASE}/coupons/${id}` : `${API_BASE}/coupons`;
   const method = id ? 'PUT' : 'POST';
@@ -286,23 +306,25 @@ async function loadCoupons() {
   try {
     const res = await fetch(`${API_BASE}/coupons`, { headers: { 'Authorization': `Bearer ${token}` } });
     const coupons = await res.json();
-    document.getElementById('coupons-table').innerHTML = coupons.map(c => `<tr><td class="p-3 font-mono">${c.code}</td><td class="p-3">${c.discount}%</td><td class="p-3">${c.expiry ? new Date(c.expiry).toLocaleDateString() : 'No expiry'}</td><td class="p-3"><span class="px-2 py-1 rounded text-xs ${c.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">${c.active ? 'Active' : 'Inactive'}</span></td><td class="p-3"><button onclick="editCoupon('${c._id}')" class="text-blue-600 hover:text-blue-800 mr-2"><i class="fas fa-edit"></i></button><button onclick="deleteCoupon('${c._id}')" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+    document.getElementById('coupons-table').innerHTML = coupons.map(c => `<tr><td class="p-3 font-mono">${c.code}</td><td class="p-3">${c.discount}%</td><td class="p-3">${c.productId?.name || 'All'}</td><td class="p-3">${c.expiry ? new Date(c.expiry).toLocaleDateString() : 'No expiry'}</td><td class="p-3"><span class="px-2 py-1 rounded text-xs ${c.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">${c.active ? 'Active' : 'Inactive'}</span></td><td class="p-3"><button onclick="editCoupon('${c._id}')" class="text-blue-600 hover:text-blue-800 mr-2"><i class="fas fa-edit"></i></button><button onclick="deleteCoupon('${c._id}')" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button></td></tr>`).join('');
   } catch (err) { console.error(err); }
 }
 window.editCoupon = async (id) => {
+  await loadProductOptions();
   try {
     const res = await fetch(`${API_BASE}/coupons`, { headers: { 'Authorization': `Bearer ${token}` } });
     const coupons = await res.json();
     const coupon = coupons.find(c => c._id === id);
     if (coupon) {
       couponId.value = coupon._id; couponCode.value = coupon.code; couponDiscount.value = coupon.discount;
+      document.getElementById('coupon-product').value = coupon.productId?._id || '';
       couponExpiry.value = coupon.expiry ? coupon.expiry.split('T')[0] : ''; couponActive.checked = coupon.active;
       document.getElementById('coupon-modal-title').textContent = 'Edit Coupon'; couponModal.classList.remove('hidden'); couponModal.classList.add('flex');
     }
   } catch (err) { console.error(err); }
 };
 window.deleteCoupon = async (id) => { if (confirm('Delete this coupon?')) { try { await fetch(`${API_BASE}/coupons/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); loadCoupons(); } catch (err) { console.error(err); } } };
-function resetCouponForm() { couponId.value = ''; couponCode.value = ''; couponDiscount.value = ''; couponExpiry.value = ''; couponActive.checked = true; }
+function resetCouponForm() { couponId.value = ''; couponCode.value = ''; couponDiscount.value = ''; document.getElementById('coupon-product').value = ''; couponExpiry.value = ''; couponActive.checked = true; }
 const bannerModal = document.getElementById('banner-modal');
 const bannerForm = document.getElementById('banner-form');
 const bannerId = document.getElementById('banner-id');
