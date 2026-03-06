@@ -91,37 +91,63 @@ const orderSchema = new mongoose.Schema({
   status: { type: String, default: 'Processing' }
 }, { timestamps: true });
 
+const reviewSchema = new mongoose.Schema({
+  productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  name: String,  // customer name (denormalized)
+  rating: { type: Number, min: 1, max: 5, required: true },
+  text: String,
+  date: { type: String, default: () => new Date().toLocaleDateString() }
+}, { timestamps: true });
+
+const couponSchema = new mongoose.Schema({
+  code: { type: String, required: true, unique: true, uppercase: true },
+  discount: { type: Number, required: true, min: 1, max: 100 }, // percentage
+  expiry: Date,
+  active: { type: Boolean, default: true }
+});
+
+const bannerSchema = new mongoose.Schema({
+  image: { type: String, required: true },
+  title: String,
+  subtitle: String,
+  link: String,
+  order: { type: Number, default: 0 },
+  active: { type: Boolean, default: true }
+});
+
+const siteSettingSchema = new mongoose.Schema({
+  key: { type: String, required: true, unique: true },
+  value: mongoose.Schema.Types.Mixed
+});
+
 const User = mongoose.model('User', userSchema);
 const Product = mongoose.model('Product', productSchema);
 const Order = mongoose.model('Order', orderSchema);
+const Review = mongoose.model('Review', reviewSchema);
+const Coupon = mongoose.model('Coupon', couponSchema);
+const Banner = mongoose.model('Banner', bannerSchema);
+const SiteSetting = mongoose.model('SiteSetting', siteSettingSchema);
 
 // ==================== Seed Admin ====================
 const seedAdmin = async () => {
   try {
-    const adminEmail = process.env.ADMIN_EMAIL;
-    const adminPassword = process.env.ADMIN_PASSWORD;
-
-    if (!adminEmail || !adminPassword) {
-      console.log('ADMIN_EMAIL or ADMIN_PASSWORD not set in environment');
-      return;
-    }
-
-    const adminExists = await User.findOne({ email: adminEmail });
+    const adminExists = await User.findOne({ email: process.env.ADMIN_EMAIL });
     if (!adminExists) {
-      const hashedPassword = await bcrypt.hash(adminPassword, 10);
+      const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
       const admin = new User({
         name: 'Admin',
-        email: adminEmail,
+        email: process.env.ADMIN_EMAIL,
         password: hashedPassword,
         role: 'admin'
       });
       await admin.save();
-      console.log('Admin user created with email:', adminEmail);
+      console.log('Admin user created');
     } else {
-      console.log('Admin user already exists');
+      console.log('Admin already exists');
     }
   } catch (err) {
-    console.log('Error seeding admin:', err);
+    console.log(err);
   }
 };
 seedAdmin();
@@ -147,57 +173,22 @@ const auth = async (req, res, next) => {
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log('Login attempt for email:', email);
-
     const user = await User.findOne({ email });
-    console.log('User found in DB:', user ? 'yes' : 'no');
-
-    if (!user) {
-      console.log('No user with that email');
+    if (!user || user.role !== 'admin') {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
-
-    if (user.role !== 'admin') {
-      console.log('User role is not admin:', user.role);
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
     const isMatch = await bcrypt.compare(password, user.password);
-    console.log('Password match result:', isMatch);
-
     if (!isMatch) {
-      console.log('Password does not match');
       return res.status(401).json({ message: 'Invalid credentials' });
     }
-
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    console.log('Login successful for:', email);
     res.json({ token, user: { id: user._id, name: user.name, email: user.email } });
   } catch (err) {
-    console.error('Login error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// (Optional) Temporary route to create admin manually – remove after testing
-// app.post('/api/create-admin', async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
-//     const hashed = await bcrypt.hash(password, 10);
-//     const admin = new User({
-//       name: 'Admin',
-//       email,
-//       password: hashed,
-//       role: 'admin'
-//     });
-//     await admin.save();
-//     res.json({ message: 'Admin created' });
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// });
-
-// Image upload
+// Image upload (general purpose)
 app.post('/api/upload', auth, upload.single('image'), (req, res) => {
   try {
     res.json({ url: req.file.path });
@@ -300,6 +291,134 @@ app.get('/api/stats', auth, async (req, res) => {
     const totalUsers = await User.countDocuments({ role: 'customer' });
     const recentOrders = await Order.find().sort({ createdAt: -1 }).limit(5);
     res.json({ totalProducts, totalOrders, totalUsers, recentOrders });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Reviews
+app.get('/api/reviews', auth, async (req, res) => {
+  try {
+    const reviews = await Review.find().populate('productId', 'name').sort({ createdAt: -1 });
+    res.json(reviews);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.delete('/api/reviews/:id', auth, async (req, res) => {
+  try {
+    await Review.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Review deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Coupons
+app.get('/api/coupons', auth, async (req, res) => {
+  try {
+    const coupons = await Coupon.find().sort({ createdAt: -1 });
+    res.json(coupons);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.post('/api/coupons', auth, async (req, res) => {
+  try {
+    const coupon = new Coupon(req.body);
+    await coupon.save();
+    res.status(201).json(coupon);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.put('/api/coupons/:id', auth, async (req, res) => {
+  try {
+    const coupon = await Coupon.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(coupon);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.delete('/api/coupons/:id', auth, async (req, res) => {
+  try {
+    await Coupon.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Coupon deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Banners
+app.get('/api/banners', async (req, res) => {  // public
+  try {
+    const banners = await Banner.find({ active: true }).sort('order');
+    res.json(banners);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.post('/api/banners', auth, upload.single('image'), async (req, res) => {
+  try {
+    const bannerData = req.body;
+    if (req.file) bannerData.image = req.file.path;
+    const banner = new Banner(bannerData);
+    await banner.save();
+    res.status(201).json(banner);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.put('/api/banners/:id', auth, upload.single('image'), async (req, res) => {
+  try {
+    const bannerData = req.body;
+    if (req.file) bannerData.image = req.file.path;
+    const banner = await Banner.findByIdAndUpdate(req.params.id, bannerData, { new: true });
+    res.json(banner);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.delete('/api/banners/:id', auth, async (req, res) => {
+  try {
+    await Banner.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Banner deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Site Settings
+app.get('/api/settings', async (req, res) => { // public
+  try {
+    const settings = await SiteSetting.find();
+    const obj = {};
+    settings.forEach(s => obj[s.key] = s.value);
+    res.json(obj);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.put('/api/settings', auth, async (req, res) => {
+  try {
+    const updates = req.body; // e.g., { siteName: '...', contactEmail: '...' }
+    const ops = Object.entries(updates).map(([key, value]) => ({
+      updateOne: {
+        filter: { key },
+        update: { $set: { key, value } },
+        upsert: true
+      }
+    }));
+    await SiteSetting.bulkWrite(ops);
+    res.json({ message: 'Settings updated' });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }

@@ -7,7 +7,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
-    /* Custom styles for admin panel */
     .sidebar-link.active {
       background-color: #b45309;
       color: white;
@@ -56,6 +55,18 @@
           </button>
           <button class="sidebar-link w-full text-left px-4 py-3 rounded hover:bg-gray-800 flex items-center gap-3" data-section="users">
             <i class="fas fa-users"></i> Users
+          </button>
+          <button class="sidebar-link w-full text-left px-4 py-3 rounded hover:bg-gray-800 flex items-center gap-3" data-section="reviews">
+            <i class="fas fa-star"></i> Reviews
+          </button>
+          <button class="sidebar-link w-full text-left px-4 py-3 rounded hover:bg-gray-800 flex items-center gap-3" data-section="coupons">
+            <i class="fas fa-ticket-alt"></i> Coupons
+          </button>
+          <button class="sidebar-link w-full text-left px-4 py-3 rounded hover:bg-gray-800 flex items-center gap-3" data-section="banners">
+            <i class="fas fa-images"></i> Banners
+          </button>
+          <button class="sidebar-link w-full text-left px-4 py-3 rounded hover:bg-gray-800 flex items-center gap-3" data-section="settings">
+            <i class="fas fa-cog"></i> Settings
           </button>
           <button id="logout-btn" class="w-full text-left px-4 py-3 rounded hover:bg-gray-800 flex items-center gap-3 text-red-400">
             <i class="fas fa-sign-out-alt"></i> Logout
@@ -124,7 +135,7 @@
           </div>
           <div id="product-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
 
-          <!-- Product Modal (hidden) -->
+          <!-- Product Modal -->
           <div id="product-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
             <div class="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
               <h3 id="modal-title" class="text-2xl font-bold mb-4">Add Product</h3>
@@ -236,6 +247,166 @@
             </table>
           </div>
         </div>
+
+        <!-- Reviews Section -->
+        <div id="reviews-section" class="section hidden">
+          <h2 class="text-3xl font-bold mb-6">Product Reviews</h2>
+          <div class="bg-white rounded-lg shadow overflow-hidden">
+            <table class="w-full">
+              <thead class="bg-gray-200">
+                <tr>
+                  <th class="p-3 text-left">Product</th>
+                  <th class="p-3 text-left">Customer</th>
+                  <th class="p-3 text-left">Rating</th>
+                  <th class="p-3 text-left">Review</th>
+                  <th class="p-3 text-left">Date</th>
+                  <th class="p-3 text-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="reviews-table" class="divide-y"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Coupons Section -->
+        <div id="coupons-section" class="section hidden">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-3xl font-bold">Coupons</h2>
+            <button id="add-coupon-btn" class="bg-amber-600 text-white px-4 py-2 rounded hover:bg-amber-700">
+              <i class="fas fa-plus mr-2"></i>Add Coupon
+            </button>
+          </div>
+          <div class="bg-white rounded-lg shadow overflow-hidden">
+            <table class="w-full">
+              <thead class="bg-gray-200">
+                <tr>
+                  <th class="p-3 text-left">Code</th>
+                  <th class="p-3 text-left">Discount %</th>
+                  <th class="p-3 text-left">Expiry</th>
+                  <th class="p-3 text-left">Status</th>
+                  <th class="p-3 text-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="coupons-table" class="divide-y"></tbody>
+            </table>
+          </div>
+
+          <!-- Coupon Modal -->
+          <div id="coupon-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-6 w-full max-w-md">
+              <h3 id="coupon-modal-title" class="text-2xl font-bold mb-4">Add Coupon</h3>
+              <form id="coupon-form">
+                <input type="hidden" id="coupon-id">
+                <div class="mb-4">
+                  <label class="block mb-2">Code *</label>
+                  <input type="text" id="coupon-code" required class="w-full border rounded px-4 py-2" placeholder="e.g., SAVE10">
+                </div>
+                <div class="mb-4">
+                  <label class="block mb-2">Discount (%) *</label>
+                  <input type="number" id="coupon-discount" min="1" max="100" required class="w-full border rounded px-4 py-2">
+                </div>
+                <div class="mb-4">
+                  <label class="block mb-2">Expiry Date (optional)</label>
+                  <input type="date" id="coupon-expiry" class="w-full border rounded px-4 py-2">
+                </div>
+                <div class="mb-4">
+                  <label class="flex items-center">
+                    <input type="checkbox" id="coupon-active" class="mr-2" checked> Active
+                  </label>
+                </div>
+                <div class="flex justify-end gap-4">
+                  <button type="button" id="close-coupon-modal" class="px-4 py-2 border rounded hover:bg-gray-100">Cancel</button>
+                  <button type="submit" class="bg-amber-600 text-white px-6 py-2 rounded hover:bg-amber-700">Save</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Banners Section -->
+        <div id="banners-section" class="section hidden">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-3xl font-bold">Banners</h2>
+            <button id="add-banner-btn" class="bg-amber-600 text-white px-4 py-2 rounded hover:bg-amber-700">
+              <i class="fas fa-plus mr-2"></i>Add Banner
+            </button>
+          </div>
+          <div id="banner-list" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+
+          <!-- Banner Modal -->
+          <div id="banner-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-6 w-full max-w-2xl">
+              <h3 id="banner-modal-title" class="text-2xl font-bold mb-4">Add Banner</h3>
+              <form id="banner-form" enctype="multipart/form-data">
+                <input type="hidden" id="banner-id">
+                <div class="mb-4">
+                  <label class="block mb-2">Banner Image *</label>
+                  <input type="file" id="banner-image" accept="image/*" class="w-full">
+                  <div id="banner-image-preview" class="mt-2"></div>
+                </div>
+                <div class="mb-4">
+                  <label class="block mb-2">Title</label>
+                  <input type="text" id="banner-title" class="w-full border rounded px-4 py-2">
+                </div>
+                <div class="mb-4">
+                  <label class="block mb-2">Subtitle</label>
+                  <input type="text" id="banner-subtitle" class="w-full border rounded px-4 py-2">
+                </div>
+                <div class="mb-4">
+                  <label class="block mb-2">Link (URL)</label>
+                  <input type="text" id="banner-link" class="w-full border rounded px-4 py-2">
+                </div>
+                <div class="mb-4">
+                  <label class="block mb-2">Order (lower = first)</label>
+                  <input type="number" id="banner-order" value="0" class="w-full border rounded px-4 py-2">
+                </div>
+                <div class="mb-4">
+                  <label class="flex items-center">
+                    <input type="checkbox" id="banner-active" class="mr-2" checked> Active
+                  </label>
+                </div>
+                <div class="flex justify-end gap-4">
+                  <button type="button" id="close-banner-modal" class="px-4 py-2 border rounded hover:bg-gray-100">Cancel</button>
+                  <button type="submit" class="bg-amber-600 text-white px-6 py-2 rounded hover:bg-amber-700">Save</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div id="settings-section" class="section hidden">
+          <h2 class="text-3xl font-bold mb-6">Site Settings</h2>
+          <div class="bg-white rounded-lg shadow p-6 max-w-2xl">
+            <form id="settings-form">
+              <div class="mb-4">
+                <label class="block mb-2">Site Name</label>
+                <input type="text" id="setting-siteName" class="w-full border rounded px-4 py-2">
+              </div>
+              <div class="mb-4">
+                <label class="block mb-2">Contact Email</label>
+                <input type="email" id="setting-contactEmail" class="w-full border rounded px-4 py-2">
+              </div>
+              <div class="mb-4">
+                <label class="block mb-2">Contact Phone</label>
+                <input type="text" id="setting-contactPhone" class="w-full border rounded px-4 py-2">
+              </div>
+              <div class="mb-4">
+                <label class="block mb-2">Address</label>
+                <textarea id="setting-address" rows="3" class="w-full border rounded px-4 py-2"></textarea>
+              </div>
+              <div class="mb-4">
+                <label class="block mb-2">Facebook URL</label>
+                <input type="url" id="setting-facebook" class="w-full border rounded px-4 py-2">
+              </div>
+              <div class="mb-4">
+                <label class="block mb-2">Instagram URL</label>
+                <input type="url" id="setting-instagram" class="w-full border rounded px-4 py-2">
+              </div>
+              <button type="submit" class="bg-amber-600 text-white px-6 py-2 rounded hover:bg-amber-700">Save Settings</button>
+            </form>
+          </div>
+        </div>
       </main>
     </div>
   </div>
@@ -243,7 +414,7 @@
   <script>
     const API_BASE = window.location.origin.includes('localhost') 
       ? 'http://localhost:5000/api' 
-      : 'https://khejur-ghee-semai.onrender.com/api'; // Replace with your Render URL
+      : 'https://khejur-ghee-semai.onrender.com/api'; // Replace with your actual Render URL
 
     let token = localStorage.getItem('adminToken');
     let currentSection = 'dashboard';
@@ -314,13 +485,16 @@
         if (section === 'products') loadProducts();
         if (section === 'orders') loadOrders();
         if (section === 'users') loadUsers();
+        if (section === 'reviews') loadReviews();
+        if (section === 'coupons') loadCoupons();
+        if (section === 'banners') loadBanners();
+        if (section === 'settings') loadSettings();
       });
     });
 
     function showDashboard() {
       loginView.classList.add('hidden');
       dashboardView.classList.remove('hidden');
-      // Activate dashboard by default
       document.querySelector('[data-section="dashboard"]').click();
     }
 
@@ -660,11 +834,362 @@
       }
     };
 
+    // ========== Reviews ==========
+    async function loadReviews() {
+      try {
+        const res = await fetch(`${API_BASE}/reviews`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const reviews = await res.json();
+        const tbody = document.getElementById('reviews-table');
+        tbody.innerHTML = reviews.map(r => `
+          <tr>
+            <td class="p-3">${r.productId?.name || 'N/A'}</td>
+            <td class="p-3">${r.name}</td>
+            <td class="p-3">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</td>
+            <td class="p-3">${r.text || ''}</td>
+            <td class="p-3">${r.date}</td>
+            <td class="p-3">
+              <button onclick="deleteReview('${r._id}')" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    window.deleteReview = async (id) => {
+      if (confirm('Delete this review?')) {
+        try {
+          await fetch(`${API_BASE}/reviews/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          loadReviews();
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    };
+
+    // ========== Coupons ==========
+    const couponModal = document.getElementById('coupon-modal');
+    const couponForm = document.getElementById('coupon-form');
+    const couponId = document.getElementById('coupon-id');
+    const couponCode = document.getElementById('coupon-code');
+    const couponDiscount = document.getElementById('coupon-discount');
+    const couponExpiry = document.getElementById('coupon-expiry');
+    const couponActive = document.getElementById('coupon-active');
+    const addCouponBtn = document.getElementById('add-coupon-btn');
+    const closeCouponModal = document.getElementById('close-coupon-modal');
+
+    addCouponBtn.addEventListener('click', () => {
+      resetCouponForm();
+      document.getElementById('coupon-modal-title').textContent = 'Add Coupon';
+      couponModal.classList.remove('hidden');
+      couponModal.classList.add('flex');
+    });
+
+    closeCouponModal.addEventListener('click', () => {
+      couponModal.classList.add('hidden');
+      couponModal.classList.remove('flex');
+    });
+
+    couponForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = {
+        code: couponCode.value,
+        discount: Number(couponDiscount.value),
+        expiry: couponExpiry.value || null,
+        active: couponActive.checked
+      };
+      const id = couponId.value;
+      const url = id ? `${API_BASE}/coupons/${id}` : `${API_BASE}/coupons`;
+      const method = id ? 'PUT' : 'POST';
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(data)
+        });
+        if (res.ok) {
+          couponModal.classList.add('hidden');
+          couponModal.classList.remove('flex');
+          loadCoupons();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    });
+
+    async function loadCoupons() {
+      try {
+        const res = await fetch(`${API_BASE}/coupons`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const coupons = await res.json();
+        const tbody = document.getElementById('coupons-table');
+        tbody.innerHTML = coupons.map(c => `
+          <tr>
+            <td class="p-3 font-mono">${c.code}</td>
+            <td class="p-3">${c.discount}%</td>
+            <td class="p-3">${c.expiry ? new Date(c.expiry).toLocaleDateString() : 'No expiry'}</td>
+            <td class="p-3"><span class="px-2 py-1 rounded text-xs ${c.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">${c.active ? 'Active' : 'Inactive'}</span></td>
+            <td class="p-3">
+              <button onclick="editCoupon('${c._id}')" class="text-blue-600 hover:text-blue-800 mr-2"><i class="fas fa-edit"></i></button>
+              <button onclick="deleteCoupon('${c._id}')" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    window.editCoupon = async (id) => {
+      try {
+        const res = await fetch(`${API_BASE}/coupons`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const coupons = await res.json();
+        const coupon = coupons.find(c => c._id === id);
+        if (coupon) {
+          couponId.value = coupon._id;
+          couponCode.value = coupon.code;
+          couponDiscount.value = coupon.discount;
+          couponExpiry.value = coupon.expiry ? coupon.expiry.split('T')[0] : '';
+          couponActive.checked = coupon.active;
+          document.getElementById('coupon-modal-title').textContent = 'Edit Coupon';
+          couponModal.classList.remove('hidden');
+          couponModal.classList.add('flex');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    window.deleteCoupon = async (id) => {
+      if (confirm('Delete this coupon?')) {
+        try {
+          await fetch(`${API_BASE}/coupons/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          loadCoupons();
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    };
+
+    function resetCouponForm() {
+      couponId.value = '';
+      couponCode.value = '';
+      couponDiscount.value = '';
+      couponExpiry.value = '';
+      couponActive.checked = true;
+    }
+
+    // ========== Banners ==========
+    const bannerModal = document.getElementById('banner-modal');
+    const bannerForm = document.getElementById('banner-form');
+    const bannerId = document.getElementById('banner-id');
+    const bannerImage = document.getElementById('banner-image');
+    const bannerTitle = document.getElementById('banner-title');
+    const bannerSubtitle = document.getElementById('banner-subtitle');
+    const bannerLink = document.getElementById('banner-link');
+    const bannerOrder = document.getElementById('banner-order');
+    const bannerActive = document.getElementById('banner-active');
+    const bannerImagePreview = document.getElementById('banner-image-preview');
+    const addBannerBtn = document.getElementById('add-banner-btn');
+    const closeBannerModal = document.getElementById('close-banner-modal');
+    let bannerImageFile = null;
+
+    addBannerBtn.addEventListener('click', () => {
+      resetBannerForm();
+      document.getElementById('banner-modal-title').textContent = 'Add Banner';
+      bannerModal.classList.remove('hidden');
+      bannerModal.classList.add('flex');
+    });
+
+    closeBannerModal.addEventListener('click', () => {
+      bannerModal.classList.add('hidden');
+      bannerModal.classList.remove('flex');
+    });
+
+    bannerImage.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        bannerImageFile = file;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          bannerImagePreview.innerHTML = `<img src="${e.target.result}" class="h-32 object-cover rounded">`;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    bannerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData();
+      formData.append('title', bannerTitle.value);
+      formData.append('subtitle', bannerSubtitle.value);
+      formData.append('link', bannerLink.value);
+      formData.append('order', bannerOrder.value);
+      formData.append('active', bannerActive.checked);
+      if (bannerImageFile) formData.append('image', bannerImageFile);
+      const id = bannerId.value;
+      const url = id ? `${API_BASE}/banners/${id}` : `${API_BASE}/banners`;
+      const method = id ? 'PUT' : 'POST';
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData
+        });
+        if (res.ok) {
+          bannerModal.classList.add('hidden');
+          bannerModal.classList.remove('flex');
+          loadBanners();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    });
+
+    async function loadBanners() {
+      try {
+        const res = await fetch(`${API_BASE}/banners`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
+        const banners = await res.json();
+        const container = document.getElementById('banner-list');
+        container.innerHTML = banners.map(b => `
+          <div class="bg-white rounded-lg shadow p-4">
+            <img src="${b.image}" class="w-full h-40 object-cover rounded mb-3">
+            <h3 class="font-bold">${b.title || 'Untitled'}</h3>
+            <p class="text-sm text-gray-600">${b.subtitle || ''}</p>
+            <p class="text-sm">Link: ${b.link || 'none'}</p>
+            <div class="flex justify-between items-center mt-2">
+              <span class="text-sm ${b.active ? 'text-green-600' : 'text-red-600'}">${b.active ? 'Active' : 'Inactive'}</span>
+              <div>
+                <button onclick="editBanner('${b._id}')" class="text-blue-600 hover:text-blue-800 mr-2"><i class="fas fa-edit"></i></button>
+                <button onclick="deleteBanner('${b._id}')" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    window.editBanner = async (id) => {
+      try {
+        const res = await fetch(`${API_BASE}/banners`);
+        const banners = await res.json();
+        const banner = banners.find(b => b._id === id);
+        if (banner) {
+          bannerId.value = banner._id;
+          bannerTitle.value = banner.title || '';
+          bannerSubtitle.value = banner.subtitle || '';
+          bannerLink.value = banner.link || '';
+          bannerOrder.value = banner.order || 0;
+          bannerActive.checked = banner.active;
+          bannerImagePreview.innerHTML = `<img src="${banner.image}" class="h-32 object-cover rounded">`;
+          bannerImageFile = null;
+          document.getElementById('banner-modal-title').textContent = 'Edit Banner';
+          bannerModal.classList.remove('hidden');
+          bannerModal.classList.add('flex');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    window.deleteBanner = async (id) => {
+      if (confirm('Delete this banner?')) {
+        try {
+          await fetch(`${API_BASE}/banners/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          loadBanners();
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    };
+
+    function resetBannerForm() {
+      bannerId.value = '';
+      bannerTitle.value = '';
+      bannerSubtitle.value = '';
+      bannerLink.value = '';
+      bannerOrder.value = '0';
+      bannerActive.checked = true;
+      bannerImage.value = '';
+      bannerImagePreview.innerHTML = '';
+      bannerImageFile = null;
+    }
+
+    // ========== Settings ==========
+    const settingsForm = document.getElementById('settings-form');
+
+    async function loadSettings() {
+      try {
+        const res = await fetch(`${API_BASE}/settings`);
+        const settings = await res.json();
+        document.getElementById('setting-siteName').value = settings.siteName || '';
+        document.getElementById('setting-contactEmail').value = settings.contactEmail || '';
+        document.getElementById('setting-contactPhone').value = settings.contactPhone || '';
+        document.getElementById('setting-address').value = settings.address || '';
+        document.getElementById('setting-facebook').value = settings.facebook || '';
+        document.getElementById('setting-instagram').value = settings.instagram || '';
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    settingsForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = {
+        siteName: document.getElementById('setting-siteName').value,
+        contactEmail: document.getElementById('setting-contactEmail').value,
+        contactPhone: document.getElementById('setting-contactPhone').value,
+        address: document.getElementById('setting-address').value,
+        facebook: document.getElementById('setting-facebook').value,
+        instagram: document.getElementById('setting-instagram').value
+      };
+      try {
+        await fetch(`${API_BASE}/settings`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(data)
+        });
+        alert('Settings saved');
+      } catch (err) {
+        console.error(err);
+      }
+    });
+
     // Make functions global for onclick handlers
     window.viewOrder = viewOrder;
     window.editProduct = editProduct;
     window.deleteProduct = deleteProduct;
     window.deleteUser = deleteUser;
+    window.deleteReview = deleteReview;
+    window.editCoupon = editCoupon;
+    window.deleteCoupon = deleteCoupon;
+    window.editBanner = editBanner;
+    window.deleteBanner = deleteBanner;
   </script>
 </body>
 </html>
